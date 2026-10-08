@@ -9,9 +9,9 @@
  * verify the token and log the customer in or create an account, then
  * redirects. All business logic lives in the module class.
  *
- * @author    APLINE Arkadiusz Pielechowski
- * @copyright APLINE Arkadiusz Pielechowski
- * @license   Custom Attribution License v1.0 - see LICENSE.md
+ * @author    Arkadiusz Pielechowski
+ * @copyright Arkadiusz Pielechowski
+ * @license   MIT - see LICENSE.md
  */
 if (!defined('_PS_VERSION_')) {
     exit;

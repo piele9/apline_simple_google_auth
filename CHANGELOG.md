@@ -4,6 +4,13 @@ Wszystkie istotne zmiany modułu **APLINE Simple Google Auth dla PrestaShop 9**.
 Format oparty na [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/),
 numeracja zgodna z [wersjonowaniem semantycznym](https://semver.org/lang/pl/).
 
+## [1.1.2] – 2026-10-08
+
+### Zmieniono
+- Licencja **MIT** (wcześniej Custom Attribution License v1.0): moduł możesz używać, zmieniać i rozpowszechniać, także komercyjnie, z zachowaniem noty o prawach autorskich i licencji.
+- Autor: Arkadiusz Pielechowski — podpis „Moduł stworzony przez PIELECHOWSKI.PL” na stronie konfiguracji i ramka „Podoba Ci się ten moduł?” prowadzą do https://pielechowski.pl.
+- Lżejsze logo modułu (23 KB zamiast ok. 0,8–0,9 MB) — szybsza lista modułów w panelu.
+
 ## [1.1.1] – 2026-10-08
 
 ### Naprawiono

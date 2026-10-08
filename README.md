@@ -1,6 +1,6 @@
 # APLINE Simple Google Auth — logowanie przez Google w PrestaShop 9
 
-![PrestaShop 9](https://img.shields.io/badge/PrestaShop-9.x-DF0067) ![PHP 8.1+](https://img.shields.io/badge/PHP-8.1%2B-777BB4) ![Wersja](https://img.shields.io/badge/wersja-1.1.1-2ea44f) ![Licencja](https://img.shields.io/badge/licencja-Custom%20Attribution%201.0-blue)
+![PrestaShop 9](https://img.shields.io/badge/PrestaShop-9.x-DF0067) ![PHP 8.1+](https://img.shields.io/badge/PHP-8.1%2B-777BB4) ![Wersja](https://img.shields.io/badge/wersja-1.1.2-2ea44f) ![Licencja](https://img.shields.io/badge/licencja-MIT-blue)
 
 Przycisk **„Kontynuuj z Google”** na stronach logowania i rejestracji. Klient wybiera konto Google w okienku, a moduł sprawdza token Google **po stronie serwera** i loguje klienta albo zakłada mu konto. Mniej haseł do pamiętania i mniej porzuconych rejestracji — dla każdego sklepu na PrestaShop 9.
 
@@ -153,6 +153,6 @@ Historia wersji: [CHANGELOG.md](CHANGELOG.md).
 
 ## Licencja i autor
 
-Custom Attribution License v1.0 — [LICENSE.md](LICENSE.md). Modułu możesz używać, możesz go zmieniać i rozpowszechniać, także komercyjnie, ale blok autorstwa APLINE na stronie konfiguracji musi zostać widoczny, z działającym linkiem do apline.pl. Dołączona biblioteka `firebase/php-jwt` ma licencję BSD-3-Clause (`vendor/firebase/php-jwt/LICENSE`).
+MIT — pełny tekst w [LICENSE.md](LICENSE.md). Moduł możesz używać, zmieniać i rozpowszechniać, także komercyjnie; zachowaj tylko informację o prawach autorskich i licencji. Dołączona biblioteka `firebase/php-jwt` ma licencję BSD-3-Clause (`vendor/firebase/php-jwt/LICENSE`).
 
-APLINE Arkadiusz Pielechowski · [apline.pl](https://apline.pl)
+Arkadiusz Pielechowski · [pielechowski.pl](https://pielechowski.pl)

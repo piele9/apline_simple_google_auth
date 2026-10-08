@@ -1,30 +1,21 @@
-APLINE Simple Google Auth for PrestaShop 9
-Custom Attribution License v1.0
+MIT License
 
-Copyright (c) APLINE
+Copyright (c) 2026 Arkadiusz Pielechowski (https://pielechowski.pl)
 
-Permission is granted to use, modify, distribute and integrate this software
-into commercial and non-commercial PrestaShop projects.
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
 
-You may:
-- use the module commercially
-- modify the source code
-- distribute modified versions
-- include the module in client projects
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
 
-You may NOT:
-- remove or hide the APLINE attribution link from the module configuration page
-- reduce the attribution visibility below reasonable readability
-- hide the attribution using CSS, JavaScript or DOM manipulation
-- remove copyright notices from source files
-
-The attribution block:
-- must remain visible in the module configuration page
-- must contain a working link to https://apline.pl
-- must use a readable font size not smaller than 12px
-
-This software bundles the firebase/php-jwt library (vendor/firebase/php-jwt),
-which is distributed under the BSD-3-Clause license — see
-vendor/firebase/php-jwt/LICENSE.
-
-This software is provided "as is", without warranty of any kind.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.

@@ -1,6 +1,6 @@
 {*
  * APLINE Simple Google Auth module for PrestaShop 9.
- * @author APLINE Arkadiusz Pielechowski
+ * @author Arkadiusz Pielechowski
  *
  * Google Identity Services renders the button itself from these data-*
  * attributes (Google brand guidelines forbid a custom design). We only

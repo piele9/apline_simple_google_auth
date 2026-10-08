@@ -1,6 +1,6 @@
 {*
  * APLINE Simple Google Auth module for PrestaShop 9.
- * @author APLINE Arkadiusz Pielechowski
+ * @author Arkadiusz Pielechowski
  *
  * Inactive placeholder shown while no Client ID is configured and the
  * placeholder is enabled (ASGA_PLACEHOLDER). It mimics the neutral (outline)
