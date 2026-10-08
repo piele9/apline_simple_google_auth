@@ -4,6 +4,14 @@ Wszystkie istotne zmiany modułu **APLINE Simple Google Auth dla PrestaShop 9**.
 Format oparty na [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/),
 numeracja zgodna z [wersjonowaniem semantycznym](https://semver.org/lang/pl/).
 
+## [1.1.1] – 2026-10-08
+
+### Naprawiono
+- Strona konfiguracji modułu (i instalacja) kończyła się błędem SQL 1064 „near 'LIMIT 1'”:
+  sprawdzanie, czy tabela modułu istnieje, używało `Db::getValue()`, które w PrestaShop 9
+  dokleja `LIMIT 1` — MySQL i MariaDB nie przyjmują go po `SHOW TABLES`. Teraz
+  `executeS()` bez pamięci podręcznej. Błąd występował już w 1.0.1.
+
 ## [1.1.0] – 2026-10-08
 
 ### Zmienione

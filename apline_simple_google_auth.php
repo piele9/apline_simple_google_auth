@@ -79,7 +79,7 @@ class apline_simple_google_auth extends Module
     {
         $this->name = 'apline_simple_google_auth';
         $this->tab = 'front_office_features';
-        $this->version = '1.1.0';
+        $this->version = '1.1.1';
         $this->author = 'APLINE Arkadiusz Pielechowski';
         $this->need_instance = false;
         $this->bootstrap = true;
@@ -210,8 +210,12 @@ class apline_simple_google_auth extends Module
      */
     public function tableExists($name)
     {
-        return (bool) Db::getInstance()->getValue(
-            'SHOW TABLES LIKE \'' . _DB_PREFIX_ . pSQL($name) . '\''
+        // executeS() without cache: getValue() appends "LIMIT 1", which MySQL and
+        // MariaDB reject after SHOW TABLES (the configuration page failed with SQL 1064).
+        return (bool) Db::getInstance()->executeS(
+            'SHOW TABLES LIKE \'' . _DB_PREFIX_ . pSQL($name) . '\'',
+            true,
+            false
         );
     }
 
