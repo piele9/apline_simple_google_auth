@@ -1,0 +1,17 @@
+{shop_name}
+
+Dzień dobry {firstname} {lastname},
+
+Twoje konto klienta ({email}) w sklepie {shop_name} zostało właśnie
+połączone z Twoim kontem Google.
+
+Od teraz możesz logować się przyciskiem Google na stronie logowania -
+jednym kliknięciem, bez wpisywania hasła.
+
+Jeśli to nie Ty, jak najszybciej skontaktuj się z nami i zmień hasło.
+
+Pozdrawiamy,
+{shop_name}
+
+---
+Ta wiadomość została wysłana automatycznie - prosimy na nią nie odpowiadać.

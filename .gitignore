@@ -1,0 +1,17 @@
+# OS / editor junk
+.DS_Store
+Thumbs.db
+*.swp
+CLAUDE.md
+HANDOFF.md
+PLAN.md
+checkpoints/
+
+# Composer: this module ships its single dependency (firebase/php-jwt)
+# pre-vendored and committed, because production shops rarely have
+# Composer. Ignore everything else under vendor/ that a future
+# `composer install` might generate, keeping the repo footprint minimal.
+/vendor/*
+!/vendor/autoload.php
+!/vendor/firebase/
+/composer.lock

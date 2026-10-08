@@ -1,0 +1,87 @@
+/*
+ * APLINE Simple Google Auth module for PrestaShop 9.
+ * @author APLINE Arkadiusz Pielechowski
+ *
+ * The Google button is drawn by the GIS library with Google's own
+ * branding — we never restyle it. These few rules only position the
+ * wrapper and keep the official button from overflowing narrow auth
+ * forms (e.g. the Classic theme login column).
+ */
+.apline-simple-google-auth.asga-wrapper {
+    margin: 16px 0;
+    display: flex;
+    justify-content: center;
+}
+
+.apline-simple-google-auth.asga-wrapper > div {
+    max-width: 100%;
+}
+
+/*
+ * Placeholder button (no Client ID yet, ASGA_PLACEHOLDER on): neutral
+ * outline look close to the official GIS "outline / large / rectangular"
+ * button, plus an info message revealed on click.
+ */
+.apline-simple-google-auth.asga-wrapper--placeholder {
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+.apline-simple-google-auth .asga-placeholder {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    width: 100%;
+    max-width: 400px;
+    min-height: 40px;
+    padding: 8px 16px;
+    border: 1px solid #dadce0;
+    border-radius: 4px;
+    background: #ffffff;
+    color: #3c4043;
+    font-family: Roboto, Arial, sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1.2;
+    cursor: pointer;
+}
+
+.apline-simple-google-auth .asga-placeholder:hover {
+    background: #f8f9fa;
+    border-color: #c6c9cd;
+}
+
+.apline-simple-google-auth .asga-placeholder-info {
+    max-width: 400px;
+    margin: 0;
+    padding: 10px 14px;
+    border-radius: 4px;
+    background: #fff8e1;
+    color: #5f4b00;
+    font-size: 14px;
+    line-height: 1.45;
+    text-align: center;
+}
+
+/*
+ * Large placeholder (ASGA_PLACEHOLDER_LARGE on): 72 px high, 22 px text —
+ * easier to read and hit for older customers.
+ */
+.apline-simple-google-auth.asga-wrapper--placeholder-large .asga-placeholder {
+    gap: 16px;
+    max-width: 520px;
+    min-height: 72px;
+    padding: 12px 24px;
+    border-width: 2px;
+    border-radius: 8px;
+    font-size: 22px;
+}
+
+.apline-simple-google-auth.asga-wrapper--placeholder-large .asga-placeholder-info {
+    max-width: 520px;
+    padding: 14px 18px;
+    border-radius: 8px;
+    font-size: 18px;
+}

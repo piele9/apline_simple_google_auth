@@ -1,0 +1,20 @@
+{
+    "name": "apline/apline_simple_google_auth",
+    "description": "APLINE Simple Google Auth dla PrestaShop 9 — logowanie i rejestracja przyciskiem „Kontynuuj z Google” z weryfikacją tokena Google po stronie serwera.",
+    "type": "prestashop-module",
+    "license": "proprietary",
+    "authors": [
+        {
+            "name": "APLINE Arkadiusz Pielechowski",
+            "homepage": "https://apline.pl"
+        }
+    ],
+    "require": {
+        "php": ">=8.1",
+        "firebase/php-jwt": "^6.10"
+    },
+    "config": {
+        "optimize-autoloader": true,
+        "prepend-autoloader": false
+    }
+}
