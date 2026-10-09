@@ -19,7 +19,7 @@ if (!defined('_PS_VERSION_')) {
 
 require_once _PS_MODULE_DIR_ . 'apline_simple_google_auth/vendor/autoload.php';
 
-class AplineSimpleGoogleAuthCallbackModuleFrontController extends ModuleFrontController
+class Apline_Simple_Google_AuthCallbackModuleFrontController extends ModuleFrontController
 {
     /** @var bool this endpoint must run over HTTPS (Google requires it) */
     public $ssl = true;

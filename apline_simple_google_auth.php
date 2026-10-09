@@ -79,7 +79,7 @@ class apline_simple_google_auth extends Module
     {
         $this->name = 'apline_simple_google_auth';
         $this->tab = 'front_office_features';
-        $this->version = '1.1.2';
+        $this->version = '1.1.3';
         $this->author = 'Arkadiusz Pielechowski';
         $this->need_instance = false;
         $this->bootstrap = true;

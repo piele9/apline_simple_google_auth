@@ -4,6 +4,11 @@ Wszystkie istotne zmiany modułu **APLINE Simple Google Auth dla PrestaShop 9**.
 Format oparty na [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/),
 numeracja zgodna z [wersjonowaniem semantycznym](https://semver.org/lang/pl/).
 
+## [1.1.3] – 2026-10-09
+
+### Naprawiono
+- Logowanie przez Google kończyło się błędem 500 na adresie zwrotnym: klasa kontrolera `callback` miała nazwę, której PrestaShop nie znajduje — dyspozytor szuka `{nazwa_modułu}{kontroler}ModuleFrontController` z podkreśleniami nazwy modułu. Teraz `Apline_Simple_Google_AuthCallbackModuleFrontController`. Błąd występował we wszystkich wcześniejszych wersjach.
+
 ## [1.1.2] – 2026-10-08
 
 ### Zmieniono

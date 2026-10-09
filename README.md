@@ -1,6 +1,6 @@
 # APLINE Simple Google Auth — logowanie przez Google w PrestaShop 9
 
-![PrestaShop 9](https://img.shields.io/badge/PrestaShop-9.x-DF0067) ![PHP 8.1+](https://img.shields.io/badge/PHP-8.1%2B-777BB4) ![Wersja](https://img.shields.io/badge/wersja-1.1.2-2ea44f) ![Licencja](https://img.shields.io/badge/licencja-MIT-blue)
+![PrestaShop 9](https://img.shields.io/badge/PrestaShop-9.x-DF0067) ![PHP 8.1+](https://img.shields.io/badge/PHP-8.1%2B-777BB4) ![Wersja](https://img.shields.io/badge/wersja-1.1.3-2ea44f) ![Licencja](https://img.shields.io/badge/licencja-MIT-blue)
 
 Przycisk **„Kontynuuj z Google”** na stronach logowania i rejestracji. Klient wybiera konto Google w okienku, a moduł sprawdza token Google **po stronie serwera** i loguje klienta albo zakłada mu konto. Mniej haseł do pamiętania i mniej porzuconych rejestracji — dla każdego sklepu na PrestaShop 9.
 
