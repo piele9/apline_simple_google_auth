@@ -4,6 +4,20 @@ Wszystkie istotne zmiany modułu **APLINE Simple Google Auth dla PrestaShop 9**.
 Format oparty na [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/),
 numeracja zgodna z [wersjonowaniem semantycznym](https://semver.org/lang/pl/).
 
+## [1.1.5] – 2026-10-11
+
+### Dodano
+- **Przycisk Google w zakładce logowania kroku zamówienia.** Motywy mają tam formularz logowania bez hooka, więc stały klient widział przycisk tylko w zakładce nowego klienta. Moduł dopisuje go pod formularzem logowania (hook `actionOutputHTMLBefore`, tylko strona zamówienia). Ustawienie „Pokazuj w zakładce logowania w zamówieniu” (domyślnie włączone) pozwala to wyłączyć, gdy motyw sam pokazuje tam przycisk.
+- **Zdanie o regulaminie i polityce prywatności pod przyciskiem:** „Kontynuując z Google, akceptujesz Regulamin i Politykę prywatności sklepu.”, z linkami do stron wybranych w ustawieniach. Konto zakładane przez Google omija formularz rejestracji ze zgodami — bez tego zdania wpis zgody zapisywany przez moduł zgód nie miał pokrycia. Ustawienia: przełącznik i dwie strony (regulamin domyślnie ze strony warunków sklepu, polityka prywatności wykrywana po adresie strony).
+
+### Zmieniono
+- **Automatyczne łączenie z istniejącym kontem tylko dla adresów, za które ręczy Google:** `@gmail.com`, `@googlemail.com` i konta Google Workspace. Przy innym adresie klient loguje się e-mailem i hasłem. Sklep nie potwierdza adresów przy rejestracji, więc konto na cudzy adres mógł założyć ktoś inny.
+- **Przy łączeniu dotychczasowe hasło konta jest wymieniane na losowe**, a oczekujący link resetu hasła przestaje działać; otwarte sesje ze starym hasłem wygasają. Klient ustawia nowe hasło przez „Nie pamiętasz hasła?” — mówi o tym e-mail o połączeniu konta. Hasło jest wymieniane dopiero po utworzeniu powiązania: gdy konta nie da się połączyć (np. jest już połączone z innym kontem Google), nic się w nim nie zmienia, a gdy nie uda się wymienić hasła, powiązanie jest cofane.
+- Na stronie z kilkoma przyciskami Google blok ustawień (`g_id_onload`) jest wstawiany raz.
+
+### Aktualizacja
+- Po wgraniu plików kliknij przy module „Aktualizuj”: skrypt rejestruje nowy hook i dopisuje ustawienia zdania oraz przycisku w zamówieniu (istniejących nie zmienia). Sprawdź w ustawieniach wybraną stronę polityki prywatności.
+
 ## [1.1.4] – 2026-10-11
 
 ### Naprawiono

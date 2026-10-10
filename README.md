@@ -1,6 +1,6 @@
 # APLINE Simple Google Auth — logowanie przez Google w PrestaShop 9
 
-![PrestaShop 9](https://img.shields.io/badge/PrestaShop-9.x-DF0067) ![PHP 8.1+](https://img.shields.io/badge/PHP-8.1%2B-777BB4) ![Wersja](https://img.shields.io/badge/wersja-1.1.4-2ea44f) ![Licencja](https://img.shields.io/badge/licencja-MIT-blue)
+![PrestaShop 9](https://img.shields.io/badge/PrestaShop-9.x-DF0067) ![PHP 8.1+](https://img.shields.io/badge/PHP-8.1%2B-777BB4) ![Wersja](https://img.shields.io/badge/wersja-1.1.5-2ea44f) ![Licencja](https://img.shields.io/badge/licencja-MIT-blue)
 
 Przycisk **„Kontynuuj z Google”** na stronach logowania i rejestracji. Klient wybiera konto Google w okienku, a moduł sprawdza token Google **po stronie serwera** i loguje klienta albo zakłada mu konto. Mniej haseł do pamiętania i mniej porzuconych rejestracji — dla każdego sklepu na PrestaShop 9.
 
@@ -8,9 +8,10 @@ Moduł korzysta z **Google Identity Services** (okienko / FedCM), a nie z dawneg
 
 ## Funkcje
 
-- oficjalny przycisk Google na stronie logowania i w formularzu rejestracji (każde miejsce włączasz osobno);
+- oficjalny przycisk Google na stronie logowania, w formularzu rejestracji i w obu zakładkach kroku zamówienia (logowanie i rejestrację włączasz osobno);
 - **weryfikacja tokena ID po stronie serwera**: podpis RS256 kluczami publicznymi Google, wystawca, odbiorca (= Twój identyfikator klienta), ważność i potwierdzony e-mail — dołączona biblioteka `firebase/php-jwt`, bez Composera na serwerze;
-- **automatyczne łączenie** logowania Google z istniejącym kontem o tym samym, potwierdzonym przez Google adresie e-mail (opcjonalne, z e-mailem do klienta);
+- **automatyczne łączenie** logowania Google z istniejącym kontem o tym samym adresie e-mail — tylko dla adresów, za które ręczy Google (`@gmail.com` i konta Google Workspace), z wymianą dotychczasowego hasła na losowe i e-mailem do klienta (opcjonalne);
+- **zdanie o regulaminie i polityce prywatności** pod przyciskiem, z linkami do wybranych stron sklepu;
 - **zakładanie nowego konta** z profilu Google, gdy klienta jeszcze nie ma (losowe hasło, newsletter i zgody marketingowe wyłączone);
 - kolor, rozmiar, tekst i kształt przycisku według wytycznych Google — przycisk rysuje biblioteka Google, w języku sklepu;
 - opcjonalne okienko **One Tap**;
@@ -81,14 +82,18 @@ Moduły → Menedżer modułów → APLINE Simple Google Auth → „Konfiguruj�
 |---|---|---|
 | Identyfikator klienta Google (Client ID) | puste | Identyfikator z kroku 14. Bez niego przycisk Google się nie wyświetla. |
 | Pokazuj na stronie logowania | Tak | Przycisk pod formularzem logowania. |
+| Pokazuj w zakładce logowania w zamówieniu | Tak | Przycisk pod formularzem logowania w kroku zamówienia — moduł dopisuje go do strony, bo motyw nie ma tam hooka. Wyłącz, jeśli motyw sam pokazuje tam przycisk. |
 | Pokazuj w formularzu rejestracji | Tak | Przycisk pod formularzem klienta (zob. [Jak to działa](#jak-to-działa)). |
 | Kolor przycisku | Biały z obramowaniem | Także: Niebieski, Czarny. |
 | Rozmiar przycisku | Duży | Także: Mały, Średni. |
 | Tekst przycisku | Kontynuuj z Google | Także: Zaloguj się przez Google, Zarejestruj się przez Google, Zaloguj się. |
 | Kształt przycisku | Prostokątny | Także: Zaokrąglony. |
 | Okienko One Tap | Nie | Google sam podpowiada logowanie w okienku na stronach z przyciskiem. |
-| Łącz istniejące konta automatycznie | Tak | Gdy e-mail z Google należy do istniejącego klienta, konto zostaje połączone i klient się loguje. Po wyłączeniu taki klient loguje się e-mailem i hasłem. |
-| Powiadomienie o połączeniu konta | Tak | E-mail do klienta po automatycznym połączeniu jego konta z Google. |
+| Łącz istniejące konta automatycznie | Tak | Gdy e-mail z Google należy do istniejącego klienta, konto zostaje połączone i klient się loguje — tylko dla adresów `@gmail.com` i kont Google Workspace. Dotychczasowe hasło konta przestaje wtedy działać. Po wyłączeniu, a także przy każdym innym adresie, klient loguje się e-mailem i hasłem. |
+| Powiadomienie o połączeniu konta | Tak | E-mail do klienta po automatycznym połączeniu jego konta z Google; mówi też o wymianie hasła, więc lepiej go nie wyłączać. |
+| Informacja o regulaminie pod przyciskiem | Tak | Zdanie „Kontynuując z Google, akceptujesz Regulamin i Politykę prywatności sklepu.” pod każdym przyciskiem Google. |
+| Strona regulaminu | strona warunków sklepu | Strona, do której prowadzi słowo „Regulamin”; „— bez linku —” zostawia sam tekst. |
+| Strona polityki prywatności | wykrywana po adresie | Strona, do której prowadzą słowa „Politykę prywatności”. Przy instalacji i aktualizacji moduł szuka strony o adresie zaczynającym się od `polityka-prywatnosci` albo `privacy` — sprawdź wybór. |
 | Zaślepka bez identyfikatora | Nie | Dopóki nie ma identyfikatora, klienci widzą nieaktywny przycisk „Kontynuuj z Google”. |
 | Duża zaślepka | Nie | Zaślepka 72 px z napisem 22 px; wyłączona — rozmiar zbliżony do przycisku Google. |
 | Komunikat zaślepki | „Logowanie przez Google jest w przygotowaniu…” | Tekst po kliknięciu zaślepki, osobno dla każdego języka, do 500 znaków. |
@@ -98,6 +103,8 @@ Kliknij **„Zapisz ustawienia”**, a potem sprawdź logowanie w oknie prywatny
 ## Aktualizacja
 
 Wgraj ZIP nowej wersji tak jak przy instalacji — PrestaShop uruchomi skrypty z `upgrade/` i zachowa ustawienia.
+
+Aktualizacja do 1.1.5 rejestruje moduł w hooku `actionOutputHTMLBefore` (przycisk w zakładce logowania kroku zamówienia) i dopisuje ustawienia zdania o regulaminie. Po wgraniu samych plików (bez instalatora ZIP) kliknij przy module „Aktualizuj” — do tego czasu zdanie pokazuje się z linkiem do strony warunków sklepu, a przycisku w zakładce logowania zamówienia nie ma.
 
 Aktualizacja do 1.1.0 dopisuje ustawienia zaślepki tak, żeby sklep wyglądał jak w wersji 1.0.1: zaślepka włączona, duża, z dotychczasowym komunikatem. Jeśli masz już identyfikator klienta, zaślepka i tak się nie pokazuje.
 
@@ -118,11 +125,11 @@ Klienci, którzy logowali się tylko przez Google, zachowują konto; żeby zalog
 3. Moduł sprawdza token: podpis RS256 kluczami z `https://www.googleapis.com/oauth2/v3/certs` (pamięć podręczna 24 h; przy awarii sieci używany jest poprzedni zestaw kluczy), wystawcę, odbiorcę, ważność (z tolerancją 30 s) i `email_verified`.
 4. Potem:
    - konto Google jest już połączone → loguje tego klienta (konto nieaktywne → komunikat);
-   - istnieje klient z tym samym e-mailem → łączy i loguje (gdy włączone „Łącz istniejące konta automatycznie”), w przeciwnym razie prosi o logowanie hasłem;
+   - istnieje klient z tym samym e-mailem → gdy włączone „Łącz istniejące konta automatycznie” i za adres ręczy Google (`@gmail.com`, `@googlemail.com` albo konto Google Workspace — pole `hd` tokena): wymienia hasło konta na losowe, kasuje oczekujący link resetu hasła, łączy i loguje; w przeciwnym razie prosi o logowanie hasłem. Sklep nie potwierdza adresów przy rejestracji, więc konto na cudzy adres mógł założyć ktoś inny — po połączeniu jego hasło i otwarte sesje przestają działać;
    - w pozostałych przypadkach zakłada nowe konto z profilu Google, wywołuje hook `actionCustomerAccountAdd` (inne moduły, np. zgód, mogą zareagować) i loguje klienta.
-5. Po sukcesie klient trafia do „Mojego konta”, po błędzie — na stronę logowania z ogólnym komunikatem, który nie zdradza, który test nie przeszedł.
+5. Po sukcesie klient wraca tam, skąd przyszedł (krok zamówienia albo strona wskazana przy przejściu do logowania; bez wskazówki — „Moje konto”), po błędzie — na stronę logowania z ogólnym komunikatem, który nie zdradza, który test nie przeszedł.
 
-Hooki: `displayHeader` (skrypt Google i arkusz stylów — tylko na stronach `authentication`, `registration`, `order`, `identity`), `displayCustomerLoginFormAfter` (przycisk pod logowaniem i komunikaty błędów), `displayCustomerAccountForm` (przycisk pod formularzem klienta). PrestaShop używa tego samego formularza klienta przy rejestracji, przy zamówieniu bez konta i na stronie danych klienta w „Moim koncie”, więc przycisk z opcji „Pokazuj w formularzu rejestracji” może pojawić się we wszystkich tych miejscach (zależnie od motywu).
+Hooki: `displayHeader` (skrypt Google i arkusz stylów — tylko na stronach `authentication`, `registration`, `order`, `identity`), `displayCustomerLoginFormAfter` (przycisk pod logowaniem i komunikaty błędów), `displayCustomerAccountForm` (przycisk pod formularzem klienta), `actionOutputHTMLBefore` (tylko strona zamówienia: przycisk pod formularzem w zakładce logowania — motywy nie mają tam hooka; gdy zakładki nie ma albo motyw sam pokazuje tam przycisk, strona zostaje bez zmian). Na stronie z kilkoma przyciskami blok ustawień Google (`g_id_onload`) jest tylko jeden. PrestaShop używa tego samego formularza klienta przy rejestracji, przy zamówieniu bez konta i na stronie danych klienta w „Moim koncie”, więc przycisk z opcji „Pokazuj w formularzu rejestracji” może pojawić się we wszystkich tych miejscach (zależnie od motywu).
 
 Moduł nie zmienia natywnych tabel. Tabela `asga_customer_link` łączy `id_customer` z identyfikatorem konta Google (`sub`) w relacji 1:1, z kluczem obcym `ON DELETE CASCADE` (usunięcie klienta usuwa powiązanie); gdy baza nie pozwala na klucz obcy, tabela powstaje bez niego.
 
@@ -132,8 +139,8 @@ Moduł nie zmienia natywnych tabel. Tabela `asga_customer_link` łączy `id_cust
 - **Czego moduł nie zapisuje:** samego tokena, zdjęcia profilowego, języka konta Google ani żadnych innych pól tokena. Nie pobiera danych z API Google — tylko odczytuje podpisany token.
 - **Co widzi Google:** na stronach logowania, rejestracji, zamówienia i danych klienta przeglądarka klienta ładuje skrypt z `accounts.google.com`, więc Google otrzymuje dane techniczne (adres IP, przeglądarka, odwiedzana strona) i może używać własnych ciasteczek; skrypt ustawia też ciasteczko `g_csrf_token` w domenie sklepu. Bez identyfikatora klienta skrypt Google się nie ładuje (także przy zaślepce). Uwzględnij logowanie przez Google w polityce prywatności i polityce cookies.
 - **Serwer sklepu** łączy się z Google tylko po publiczne klucze podpisu (raz na 24 h) — bez danych klientów.
-- **Zgody:** nowe konto ma wyłączony newsletter i zgody marketingowe. Moduł nie pokazuje własnej zgody RODO — zostaw to modułowi zgód.
-- **Powiadomienie:** po automatycznym połączeniu istniejącego konta klient dostaje e-mail (szablon `mails/pl/account_linked`), żeby mógł zareagować, jeśli to nie on.
+- **Zgody:** nowe konto ma wyłączony newsletter i zgody marketingowe. Konto zakładane przez Google omija formularz rejestracji z polami zgód, dlatego pod przyciskiem stoi zdanie o akceptacji regulaminu i polityki prywatności (z linkami) — to ono jest podstawą wpisu, który moduł zgód zapisuje dla nowego konta. Wskaż w ustawieniach właściwe strony.
+- **Powiadomienie:** po automatycznym połączeniu istniejącego konta klient dostaje e-mail (szablon `mails/pl/account_linked`): że konto połączono, że dotychczasowe hasło przestało działać i jak ustawić nowe.
 
 ## Rozwiązywanie problemów
 

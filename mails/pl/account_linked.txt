@@ -8,7 +8,11 @@ połączone z Twoim kontem Google.
 Od teraz możesz logować się przyciskiem Google na stronie logowania -
 jednym kliknięciem, bez wpisywania hasła.
 
-Jeśli to nie Ty, jak najszybciej skontaktuj się z nami i zmień hasło.
+Dla bezpieczeństwa dotychczasowe hasło do konta przestało działać.
+Jeśli chcesz logować się także hasłem, ustaw nowe: na stronie logowania
+kliknij "Nie pamiętasz hasła?".
+
+Jeśli to nie Ty, jak najszybciej skontaktuj się z nami.
 
 Pozdrawiamy,
 {shop_name}

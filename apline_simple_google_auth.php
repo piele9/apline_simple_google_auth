@@ -42,6 +42,14 @@ class apline_simple_google_auth extends Module
     const PLACEHOLDER_LARGE = 'ASGA_PLACEHOLDER_LARGE';
     const PLACEHOLDER_INFO = 'ASGA_PLACEHOLDER_INFO';
 
+    /** Configuration keys — note about the terms and privacy policy under the button (since 1.1.5). */
+    const CONSENT_NOTE = 'ASGA_CONSENT_NOTE';
+    const CONSENT_TERMS_CMS = 'ASGA_CONSENT_TERMS_CMS';
+    const CONSENT_PRIVACY_CMS = 'ASGA_CONSENT_PRIVACY_CMS';
+
+    /** Configuration key — Google button added to the login tab of the checkout (since 1.1.5). */
+    const CHECKOUT_LOGIN = 'ASGA_CHECKOUT_LOGIN';
+
     /** Configuration keys — internal JWKS cache (not shown in the form). */
     const JWKS_CACHE = 'ASGA_JWKS_CACHE';
     const JWKS_EXPIRES = 'ASGA_JWKS_EXPIRES';
@@ -59,6 +67,9 @@ class apline_simple_google_auth extends Module
     const FALLBACK_FIRSTNAME = 'Klient';
     const FALLBACK_LASTNAME = 'Google';
 
+    /** @var bool the GIS settings block (g_id_onload) is already on the page — Google reads only one per page */
+    private $onloadRendered = false;
+
     /**
      * Hooks the module registers on. Admin does not pick a hook (unlike
      * other SIMPLE-family modules) — each hook has a distinct role and is
@@ -72,6 +83,7 @@ class apline_simple_google_auth extends Module
             'displayHeader' => 'Ładuje bibliotekę Google Identity Services na stronach logowania i konta klienta',
             'displayCustomerLoginFormAfter' => 'Przycisk Google pod formularzem logowania',
             'displayCustomerAccountForm' => 'Przycisk Google pod formularzem rejestracji',
+            'actionOutputHTMLBefore' => 'Przycisk Google w zakładce logowania w kroku zamówienia (motyw nie ma tam hooka)',
         ];
     }
 
@@ -79,7 +91,7 @@ class apline_simple_google_auth extends Module
     {
         $this->name = 'apline_simple_google_auth';
         $this->tab = 'front_office_features';
-        $this->version = '1.1.4';
+        $this->version = '1.1.5';
         $this->author = 'Arkadiusz Pielechowski';
         $this->need_instance = false;
         $this->bootstrap = true;
@@ -148,6 +160,10 @@ class apline_simple_google_auth extends Module
             self::PLACEHOLDER,
             self::PLACEHOLDER_LARGE,
             self::PLACEHOLDER_INFO,
+            self::CONSENT_NOTE,
+            self::CONSENT_TERMS_CMS,
+            self::CONSENT_PRIVACY_CMS,
+            self::CHECKOUT_LOGIN,
             self::JWKS_CACHE,
             self::JWKS_EXPIRES,
         ];
@@ -238,8 +254,30 @@ class apline_simple_google_auth extends Module
             && Configuration::updateValue(self::PLACEHOLDER, 0)
             && Configuration::updateValue(self::PLACEHOLDER_LARGE, 0)
             && Configuration::updateValue(self::PLACEHOLDER_INFO, $this->buildLangValues(self::DEFAULT_PLACEHOLDER_INFO))
+            && Configuration::updateValue(self::CONSENT_NOTE, 1)
+            && Configuration::updateValue(self::CONSENT_TERMS_CMS, (int) Configuration::get('PS_CONDITIONS_CMS_ID'))
+            && Configuration::updateValue(self::CONSENT_PRIVACY_CMS, $this->guessPrivacyCmsId())
+            && Configuration::updateValue(self::CHECKOUT_LOGIN, 1)
             && Configuration::updateValue(self::JWKS_CACHE, '')
             && Configuration::updateValue(self::JWKS_EXPIRES, 0);
+    }
+
+    /**
+     * Best guess for the privacy policy page: an active CMS page whose
+     * friendly URL starts with one of the usual names. 0 when nothing
+     * matches — the shop then picks the page in the configuration form.
+     * (Copied in upgrade-1.1.5.php.)
+     *
+     * @return int
+     */
+    private function guessPrivacyCmsId()
+    {
+        return (int) Db::getInstance()->getValue(
+            'SELECT cl.`id_cms` FROM `' . _DB_PREFIX_ . 'cms_lang` cl
+             INNER JOIN `' . _DB_PREFIX_ . 'cms` c ON c.`id_cms` = cl.`id_cms` AND c.`active` = 1
+             WHERE cl.`link_rewrite` LIKE \'polityka-prywatnosci%\' OR cl.`link_rewrite` LIKE \'privacy%\'
+             ORDER BY cl.`id_cms` ASC'
+        );
     }
 
     /**
@@ -341,6 +379,18 @@ class apline_simple_google_auth extends Module
             $errors[] = $this->trans('Komunikat zaślepki może mieć najwyżej %max% znaków.', ['%max%' => self::PLACEHOLDER_INFO_MAX], self::L10N);
         }
 
+        // Pages linked from the note under the button: 0 (no link) or an existing CMS page.
+        $cmsOptions = $this->getCmsOptions();
+        $cmsIds = [];
+        foreach ([self::CONSENT_TERMS_CMS, self::CONSENT_PRIVACY_CMS] as $key) {
+            $idCms = (int) Tools::getValue($key);
+            if (!array_key_exists($idCms, $cmsOptions)) {
+                $errors[] = $this->trans('Wybrana strona regulaminu albo polityki prywatności nie istnieje.', [], self::L10N);
+            } else {
+                $cmsIds[$key] = $idCms;
+            }
+        }
+
         if (!empty($errors)) {
             $out = '';
             foreach (array_unique($errors) as $message) {
@@ -359,6 +409,11 @@ class apline_simple_google_auth extends Module
         Configuration::updateValue(self::PLACEHOLDER, (int) (bool) Tools::getValue(self::PLACEHOLDER));
         Configuration::updateValue(self::PLACEHOLDER_LARGE, (int) (bool) Tools::getValue(self::PLACEHOLDER_LARGE));
         Configuration::updateValue(self::PLACEHOLDER_INFO, $infos);
+        Configuration::updateValue(self::CONSENT_NOTE, (int) (bool) Tools::getValue(self::CONSENT_NOTE));
+        Configuration::updateValue(self::CHECKOUT_LOGIN, (int) (bool) Tools::getValue(self::CHECKOUT_LOGIN));
+        foreach ($cmsIds as $key => $idCms) {
+            Configuration::updateValue($key, $idCms);
+        }
         foreach ($enums as $key => $value) {
             Configuration::updateValue($key, $value);
         }
@@ -398,6 +453,21 @@ class apline_simple_google_auth extends Module
                 'pill' => $this->trans('Zaokrąglony', [], self::L10N),
             ],
         ];
+    }
+
+    /**
+     * CMS pages that the note under the button can link to.
+     *
+     * @return array [id_cms => title], 0 = no link
+     */
+    private function getCmsOptions()
+    {
+        $options = [0 => $this->trans('— bez linku —', [], self::L10N)];
+        foreach ((array) CMS::listCms((int) $this->context->language->id) as $page) {
+            $options[(int) $page['id_cms']] = (string) $page['meta_title'];
+        }
+
+        return $options;
     }
 
     /**
@@ -539,6 +609,7 @@ class apline_simple_google_auth extends Module
                         'desc' => $this->trans('Wklej go z Google Cloud Console. Wygląda tak: 123456789-abc.apps.googleusercontent.com. Bez identyfikatora przycisk Google się nie wyświetla.', [], self::L10N),
                     ],
                     $switch(self::ENABLE_LOGIN, $this->trans('Pokazuj na stronie logowania', [], self::L10N)),
+                    $switch(self::CHECKOUT_LOGIN, $this->trans('Pokazuj w zakładce logowania w zamówieniu', [], self::L10N), $this->trans('W kroku zamówienia motyw nie ma miejsca na przycisk w zakładce „Zaloguj się”, więc moduł dopisuje go do strony pod formularzem logowania. Działa razem z „Pokazuj na stronie logowania”. Wyłącz, jeśli Twój motyw sam pokazuje tam przycisk albo układ zakładki wygląda źle.', [], self::L10N)),
                     $switch(self::ENABLE_REGISTER, $this->trans('Pokazuj w formularzu rejestracji', [], self::L10N)),
                     [
                         'type' => 'select',
@@ -566,8 +637,23 @@ class apline_simple_google_auth extends Module
                         'options' => ['query' => $toQuery($options[self::BUTTON_SHAPE]), 'id' => 'id', 'name' => 'name'],
                     ],
                     $switch(self::AUTO_PROMPT, $this->trans('Okienko One Tap', [], self::L10N), $this->trans('Google sam podpowiada logowanie w okienku na stronach z przyciskiem Google. Może przeszkadzać klientom.', [], self::L10N)),
-                    $switch(self::AUTO_LINK_EXISTING, $this->trans('Łącz istniejące konta automatycznie', [], self::L10N), $this->trans('Gdy e-mail z Google należy do istniejącego klienta, konto zostaje połączone z Google i klient się loguje. Po wyłączeniu taki klient musi zalogować się e-mailem i hasłem.', [], self::L10N)),
-                    $switch(self::NOTIFY_EMAIL_ON_LINK, $this->trans('Powiadomienie o połączeniu konta', [], self::L10N), $this->trans('Wysyłaj klientowi e-mail, gdy jego istniejące konto zostanie automatycznie połączone z Google.', [], self::L10N)),
+                    $switch(self::AUTO_LINK_EXISTING, $this->trans('Łącz istniejące konta automatycznie', [], self::L10N), $this->trans('Gdy e-mail z Google należy do istniejącego klienta, konto zostaje połączone z Google i klient się loguje. Dotyczy tylko adresów, za które ręczy Google: @gmail.com i kont Google Workspace. Dotychczasowe hasło konta przestaje wtedy działać — klient ustawia nowe przez „Nie pamiętasz hasła?”. Po wyłączeniu, a także przy każdym innym adresie, klient musi zalogować się e-mailem i hasłem.', [], self::L10N)),
+                    $switch(self::NOTIFY_EMAIL_ON_LINK, $this->trans('Powiadomienie o połączeniu konta', [], self::L10N), $this->trans('Wysyłaj klientowi e-mail, gdy jego istniejące konto zostanie automatycznie połączone z Google. Wiadomość mówi też, że dotychczasowe hasło przestało działać — bez niej klient się o tym nie dowie.', [], self::L10N)),
+                    $switch(self::CONSENT_NOTE, $this->trans('Informacja o regulaminie pod przyciskiem', [], self::L10N), $this->trans('Pod przyciskiem Google pokazuje zdanie „Kontynuując z Google, akceptujesz Regulamin i Politykę prywatności sklepu.”. Konto zakładane przez Google omija formularz rejestracji ze zgodami, dlatego to zdanie powinno zostać włączone.', [], self::L10N)),
+                    [
+                        'type' => 'select',
+                        'label' => $this->trans('Strona regulaminu', [], self::L10N),
+                        'name' => self::CONSENT_TERMS_CMS,
+                        'desc' => $this->trans('Do tej strony prowadzi słowo „Regulamin” w zdaniu pod przyciskiem.', [], self::L10N),
+                        'options' => ['query' => $toQuery($this->getCmsOptions()), 'id' => 'id', 'name' => 'name'],
+                    ],
+                    [
+                        'type' => 'select',
+                        'label' => $this->trans('Strona polityki prywatności', [], self::L10N),
+                        'name' => self::CONSENT_PRIVACY_CMS,
+                        'desc' => $this->trans('Do tej strony prowadzą słowa „Politykę prywatności” w zdaniu pod przyciskiem.', [], self::L10N),
+                        'options' => ['query' => $toQuery($this->getCmsOptions()), 'id' => 'id', 'name' => 'name'],
+                    ],
                     $switch(self::PLACEHOLDER, $this->trans('Zaślepka bez identyfikatora', [], self::L10N), $this->trans('Dopóki nie ma identyfikatora klienta, klienci widzą nieaktywny przycisk „Kontynuuj z Google”, a po kliknięciu komunikat poniżej. Skrypt Google nie jest wtedy ładowany.', [], self::L10N)),
                     $switch(self::PLACEHOLDER_LARGE, $this->trans('Duża zaślepka', [], self::L10N), $this->trans('Przycisk wysokości 72 px z napisem 22 px — czytelniejszy dla starszych klientów. Po wyłączeniu zaślepka ma rozmiar zbliżony do przycisku Google.', [], self::L10N)),
                     [
@@ -611,6 +697,10 @@ class apline_simple_google_auth extends Module
             self::PLACEHOLDER => $this->formValue(self::PLACEHOLDER),
             self::PLACEHOLDER_LARGE => $this->formValue(self::PLACEHOLDER_LARGE),
             self::PLACEHOLDER_INFO => $this->langFormValue(self::PLACEHOLDER_INFO),
+            self::CONSENT_NOTE => $this->formValue(self::CONSENT_NOTE),
+            self::CHECKOUT_LOGIN => $this->formValue(self::CHECKOUT_LOGIN),
+            self::CONSENT_TERMS_CMS => (int) $this->formValue(self::CONSENT_TERMS_CMS),
+            self::CONSENT_PRIVACY_CMS => (int) $this->formValue(self::CONSENT_PRIVACY_CMS),
         ];
 
         return $helper->generateForm([$fields_form]);
@@ -776,6 +866,48 @@ class apline_simple_google_auth extends Module
     }
 
     /**
+     * The checkout shows the login form in a tab of its own and themes have
+     * no hook there (displayCustomerLoginFormAfter exists only on the login
+     * page), so a returning customer would not see the Google button at all.
+     * The button is added right after the login form of that tab. When the
+     * tab is missing (customer signed in, different theme markup) or the
+     * theme already shows the button there, the page is left untouched.
+     */
+    public function hookActionOutputHTMLBefore($params)
+    {
+        try {
+            if (!isset($params['html']) || !is_string($params['html'])) {
+                return;
+            }
+            $self = isset($this->context->controller->php_self) ? (string) $this->context->controller->php_self : '';
+            if ($self !== 'order' || !(int) Configuration::get(self::ENABLE_LOGIN) || $this->isCustomerLogged()) {
+                return;
+            }
+            // A missing key means the files are newer than the database (upgrade not run yet): enabled.
+            $checkoutLogin = Configuration::get(self::CHECKOUT_LOGIN);
+            if ($checkoutLogin !== false && !(int) $checkoutLogin) {
+                return;
+            }
+
+            $html = &$params['html'];
+            $tab = strpos($html, 'id="checkout-login-form"');
+            $end = $tab === false ? false : strpos($html, '</form>', $tab);
+            if ($end === false || strpos(substr($html, $tab, $end - $tab), 'asga-wrapper') !== false) {
+                return;
+            }
+
+            $button = $this->renderGoogleButton('login');
+            if ($button === '') {
+                return;
+            }
+            $end += strlen('</form>');
+            $html = substr($html, 0, $end) . $button . substr($html, $end);
+        } catch (\Throwable $e) {
+            PrestaShopLogger::addLog('apline_simple_google_auth: ' . get_class($e), 3);
+        }
+    }
+
+    /**
      * @return bool true when a customer is already signed in (the button must not be shown then)
      */
     private function isCustomerLogged()
@@ -830,13 +962,79 @@ class apline_simple_google_auth extends Module
             'asga_auto_prompt' => (int) Configuration::get(self::AUTO_PROMPT),
             'asga_context' => $context,
             'asga_state' => $this->getReturnTarget(),
+            // Google reads a single g_id_onload per page; further buttons reuse it.
+            'asga_render_onload' => !$this->onloadRendered,
+            'asga_consent' => $this->buildConsentNote(),
             // GIS data-context only accepts signin/signup/use, not our login/register labels.
             'asga_gis_context' => ($context === 'register' ? 'signup' : 'signin'),
             // Button text in the shop language instead of the visitor's browser language.
             'asga_locale' => isset($this->context->language->iso_code) ? (string) $this->context->language->iso_code : '',
         ]);
 
+        $this->onloadRendered = true;
+
         return $this->display(__FILE__, 'views/templates/hook/button.tpl');
+    }
+
+    /**
+     * Sentence shown under the button: an account created with Google skips
+     * the registration form and its consent checkboxes, so the customer is
+     * told here what continuing means. Returns ready HTML (texts escaped,
+     * links built from the CMS pages chosen in the configuration) or '' when
+     * the note is switched off.
+     *
+     * A missing key means the files are newer than the database (the upgrade
+     * was not run yet) — the note is then shown with the shop's own terms page.
+     *
+     * @return string
+     */
+    private function buildConsentNote()
+    {
+        $enabled = Configuration::get(self::CONSENT_NOTE);
+        if ($enabled !== false && !(int) $enabled) {
+            return '';
+        }
+
+        $termsId = Configuration::get(self::CONSENT_TERMS_CMS);
+        if ($termsId === false) {
+            $termsId = Configuration::get('PS_CONDITIONS_CMS_ID');
+        }
+
+        $text = htmlspecialchars(
+            $this->trans('Kontynuując z Google, akceptujesz %terms% i %privacy% sklepu.', [], self::L10N_SHOP),
+            ENT_QUOTES,
+            'UTF-8'
+        );
+
+        return strtr($text, [
+            '%terms%' => $this->buildCmsAnchor((int) $termsId, $this->trans('Regulamin', [], self::L10N_SHOP)),
+            '%privacy%' => $this->buildCmsAnchor(
+                (int) Configuration::get(self::CONSENT_PRIVACY_CMS),
+                $this->trans('Politykę prywatności', [], self::L10N_SHOP)
+            ),
+        ]);
+    }
+
+    /**
+     * @param int    $idCms CMS page, 0 = none
+     * @param string $label
+     *
+     * @return string link to an active CMS page (new tab, so the customer does not lose the form), or the bare label
+     */
+    private function buildCmsAnchor($idCms, $label)
+    {
+        $label = htmlspecialchars($label, ENT_QUOTES, 'UTF-8');
+        if ($idCms <= 0) {
+            return $label;
+        }
+        $idLang = (int) $this->context->language->id;
+        $cms = new CMS($idCms, $idLang);
+        if (!Validate::isLoadedObject($cms) || !$cms->active) {
+            return $label;
+        }
+        $url = (string) $this->context->link->getCMSLink($cms, null, true, $idLang);
+
+        return '<a href="' . htmlspecialchars($url, ENT_QUOTES, 'UTF-8') . '" target="_blank" rel="noopener">' . $label . '</a>';
     }
 
     /* ------------------------------------------------------------------ *
@@ -1020,11 +1218,25 @@ class apline_simple_google_auth extends Module
             if (!$this->canSignIn($existing)) {
                 return ['success' => false, 'error' => 'account_disabled'];
             }
-            if (!(int) Configuration::get(self::AUTO_LINK_EXISTING)) {
+            if (!(int) Configuration::get(self::AUTO_LINK_EXISTING) || !$this->isGoogleAuthoritative($payload)) {
                 return ['success' => false, 'error' => 'email_taken'];
             }
 
+            // Link first: when the link cannot be created (for example the account is
+            // already linked to another Google account) nothing may change in the account.
             if (!$this->linkCustomer((int) $existing->id, $googleSub, $email)) {
+                return ['success' => false, 'error' => 'internal_error'];
+            }
+            // A linked account must never keep its old password: undo the link when
+            // the password cannot be replaced.
+            try {
+                $replaced = $this->replacePassword($existing);
+            } catch (\Throwable $e) {
+                $replaced = false;
+            }
+            if (!$replaced) {
+                $this->unlinkCustomer((int) $existing->id, $googleSub);
+
                 return ['success' => false, 'error' => 'internal_error'];
             }
             if ((int) Configuration::get(self::NOTIFY_EMAIL_ON_LINK)) {
@@ -1112,6 +1324,57 @@ class apline_simple_google_auth extends Module
     }
 
     /**
+     * Google vouches for an address only when it runs the mailbox itself:
+     * @gmail.com (with its @googlemail.com alias) and Google Workspace
+     * accounts (`hd` claim). For any other address `email_verified` says no
+     * more than that somebody once confirmed it, and Google's own guidance
+     * is not to merge such a login into an existing account automatically.
+     *
+     * @param \stdClass $payload validated claims
+     *
+     * @return bool
+     */
+    private function isGoogleAuthoritative($payload)
+    {
+        if (isset($payload->hd) && is_string($payload->hd) && $payload->hd !== '') {
+            return true;
+        }
+
+        return isset($payload->email) && preg_match('/@(gmail|googlemail)\.com$/i', (string) $payload->email) === 1;
+    }
+
+    /**
+     * Give an existing account a random password before it is linked. The
+     * shop does not verify e-mail addresses on registration, so the account
+     * may have been created by someone else on this address — after linking,
+     * that person's password, pending reset link and open sessions stop
+     * working (Customer::isLogged() compares the cookie with the stored hash).
+     * The owner sets a new password with the "forgot password" link.
+     *
+     * Written directly: Customer::update() validates every field and fails on
+     * imported accounts holding data the current validators reject.
+     *
+     * @param Customer $customer
+     *
+     * @return bool
+     */
+    private function replacePassword(Customer $customer)
+    {
+        $hash = Tools::hash(Tools::passwdGen(32));
+        $ok = (bool) Db::getInstance()->execute(
+            'UPDATE `' . _DB_PREFIX_ . 'customer`
+             SET `passwd` = \'' . pSQL($hash) . '\', `reset_password_token` = NULL, `reset_password_validity` = NULL
+             WHERE `id_customer` = ' . (int) $customer->id
+        );
+        if ($ok) {
+            $customer->passwd = $hash;
+            $customer->removeResetPasswordToken();
+        }
+
+        return $ok;
+    }
+
+    /**
      * Insert a row into the id_customer <-> google_sub mapping table.
      *
      * @param int    $idCustomer
@@ -1131,6 +1394,22 @@ class apline_simple_google_auth extends Module
             'date_add' => $now,
             'date_upd' => $now,
         ]);
+    }
+
+    /**
+     * Remove a link created a moment ago (rollback of an unfinished auto-link).
+     *
+     * @param int    $idCustomer
+     * @param string $googleSub
+     *
+     * @return bool
+     */
+    private function unlinkCustomer($idCustomer, $googleSub)
+    {
+        return (bool) Db::getInstance()->delete(
+            self::LINK_TABLE,
+            '`id_customer` = ' . (int) $idCustomer . ' AND `google_sub` = \'' . pSQL($googleSub) . '\''
+        );
     }
 
     /**
@@ -1239,7 +1518,7 @@ class apline_simple_google_auth extends Module
                 _PS_MODULE_DIR_ . $this->name . '/mails/'
             );
         } catch (\Throwable $e) {
-            PrestaShopLogger::addLog('apline_simple_google_auth: link notification email failed: ' . $e->getMessage(), 2);
+            PrestaShopLogger::addLog('apline_simple_google_auth: link notification email failed (' . get_class($e) . ')', 2);
         }
     }
 

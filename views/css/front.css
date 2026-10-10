@@ -10,7 +10,21 @@
 .apline-simple-google-auth.asga-wrapper {
     margin: 16px 0;
     display: flex;
-    justify-content: center;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* Sentence about the terms and the privacy policy under the button. */
+.apline-simple-google-auth .asga-consent {
+    max-width: 520px;
+    margin: 10px 0 0;
+    font-size: 14px;
+    line-height: 1.5;
+    text-align: center;
+}
+
+.apline-simple-google-auth .asga-consent a {
+    text-decoration: underline;
 }
 
 .apline-simple-google-auth.asga-wrapper > div {
