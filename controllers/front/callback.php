@@ -52,14 +52,16 @@ class Apline_Simple_Google_AuthCallbackModuleFrontController extends ModuleFront
 
             $result = $this->module->loginOrRegister($payload);
             if (!empty($result['success'])) {
-                Tools::redirect($this->context->link->getPageLink('my-account', true));
+                $this->success[] = $this->trans('Zalogowano przez Google.', [], 'Modules.Aplinesimplegoogleauth.Shop');
+                $this->redirectWithNotifications($this->resolveReturnUrl((string) Tools::getValue('state')));
 
                 return;
             }
 
             return $this->failRedirect(!empty($result['error']) ? $result['error'] : 'internal_error');
         } catch (\Throwable $e) {
-            PrestaShopLogger::addLog('apline_simple_google_auth callback: ' . $e->getMessage(), 3);
+            // Class name only: database exceptions carry the SQL, i.e. the customer's e-mail.
+            PrestaShopLogger::addLog('apline_simple_google_auth callback: ' . get_class($e), 3);
 
             return $this->failRedirect('internal_error');
         }
@@ -70,6 +72,64 @@ class Apline_Simple_Google_AuthCallbackModuleFrontController extends ModuleFront
         // Reached only if postProcess did not redirect (should not happen).
         parent::initContent();
         Tools::redirect('index.php?controller=authentication');
+    }
+
+    /**
+     * Turn the `state` sent back by Google into a safe address inside this
+     * shop. `state` is customer-controlled, so anything that is not a known
+     * page name or an https address on the shop's own host falls back to
+     * "My account". Login, registration, password and callback pages are
+     * never a target (they would bounce the customer around).
+     *
+     * @param string $state
+     *
+     * @return string absolute URL
+     */
+    private function resolveReturnUrl($state)
+    {
+        $default = $this->context->link->getPageLink('my-account', true);
+        $state = trim($state);
+        if ($state === '' || strlen($state) > 500 || preg_match('/[\x00-\x20\\\\<>"\']/', $state)) {
+            return $default;
+        }
+
+        $blocked = ['authentication', 'registration', 'password', 'my-account'];
+
+        // Page name, e.g. "order" or "history" - the same form the native login uses.
+        if (preg_match('/^[a-z][a-z0-9-]{0,40}$/', $state)) {
+            if (in_array($state, $blocked, true)) {
+                return $default;
+            }
+            $url = (string) $this->context->link->getPageLink($state, true);
+
+            return $url !== '' ? $url : $default;
+        }
+
+        // Full address: https, exactly this shop's host, no credentials, no login-like page.
+        $parts = parse_url($state);
+        $host = Tools::getShopDomainSsl();
+        if (!is_array($parts)
+            || !isset($parts['scheme'], $parts['host'])
+            || strtolower($parts['scheme']) !== 'https'
+            || strtolower($parts['host']) !== strtolower($host)
+            || isset($parts['user']) || isset($parts['pass']) || isset($parts['port'])
+        ) {
+            return $default;
+        }
+        foreach (['authentication', 'registration', 'password'] as $page) {
+            $pageUrl = parse_url((string) $this->context->link->getPageLink($page, true), PHP_URL_PATH);
+            if ($pageUrl && isset($parts['path']) && rtrim($parts['path'], '/') === rtrim($pageUrl, '/')) {
+                return $default;
+            }
+        }
+        if (isset($parts['path']) && strpos($parts['path'], '/module/' . $this->module->name . '/') !== false) {
+            return $default;
+        }
+        if (stripos($state, 'controller=authentication') !== false || stripos($state, 'controller=registration') !== false) {
+            return $default;
+        }
+
+        return $state;
     }
 
     /**

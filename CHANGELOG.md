@@ -4,6 +4,24 @@ Wszystkie istotne zmiany modułu **APLINE Simple Google Auth dla PrestaShop 9**.
 Format oparty na [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/),
 numeracja zgodna z [wersjonowaniem semantycznym](https://semver.org/lang/pl/).
 
+## [1.1.4] – 2026-10-11
+
+### Naprawiono
+- **Logowanie przez Google nie logowało klienta.** Konto powstawało i łączyło się z Google, ale klient wracał na stronę logowania, a kolejne kliknięcie „Kontynuuj jako …” niczego nie zmieniało. Moduł wpisywał dane do ciasteczka ręcznie i nie zakładał sesji klienta, której PrestaShop (od 1.7.8) wymaga, żeby uznać klienta za zalogowanego. Teraz loguje tak jak formularz logowania sklepu (`Context::updateCustomer()`), razem z koszykiem i przeliczeniem kodów rabatowych.
+- Wyłączone konto mogło zalogować się przez Google, jeśli trafiało na ścieżkę łączenia po adresie e-mail. Konto wyłączone, usunięte albo konto gościa dostaje komunikat „To konto jest nieaktywne”.
+- Nowe konto założone przez Google nie dostawało wiadomości powitalnej sklepu. Wysyłka idzie teraz jak przy zwykłej rejestracji (gdy sklep ma ją włączoną), a moduły nasłuchujące nowego konta są powiadamiane po zalogowaniu klienta.
+- Dwa szybkie kliknięcia przycisku przy pierwszym logowaniu mogły pokazać błąd „Nie udało się założyć konta”, choć konto powstało. Drugie żądanie loguje teraz na konto założone przez pierwsze.
+- Imię albo nazwisko z konta Google ze znakiem niedozwolonym w danych klienta kończyło się ogólnym błędem zamiast założeniem konta.
+- Przycisk Google pokazywał się zalogowanemu klientowi w formularzu „Dane osobiste” — kliknięcie innym kontem Google przełączało konto.
+
+### Dodano
+- Po zalogowaniu klient wraca tam, skąd przyszedł: do zamówienia, gdy klikał przycisk w kroku zamówienia, albo na stronę wskazaną przez sklep przy przejściu do logowania; bez takiej wskazówki — na „Moje konto”. Cel jest sprawdzany po stronie sklepu (tylko własny adres sklepu po HTTPS, nigdy strona logowania ani rejestracji).
+- Komunikat „Zalogowano przez Google.” po udanym logowaniu.
+
+### Zmieniono
+- Dziennik błędów zapisuje rodzaj błędu bez jego treści, żeby adres e-mail klienta nie trafiał do logów.
+- Nagłówek licencji MIT także we własnym autoloaderze modułu (`vendor/autoload.php`).
+
 ## [1.1.3] – 2026-10-09
 
 ### Naprawiono

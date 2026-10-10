@@ -79,7 +79,7 @@ class apline_simple_google_auth extends Module
     {
         $this->name = 'apline_simple_google_auth';
         $this->tab = 'front_office_features';
-        $this->version = '1.1.3';
+        $this->version = '1.1.4';
         $this->author = 'Arkadiusz Pielechowski';
         $this->need_instance = false;
         $this->bootstrap = true;
@@ -742,6 +742,9 @@ class apline_simple_google_auth extends Module
     public function hookDisplayCustomerLoginFormAfter($params)
     {
         try {
+            if ($this->isCustomerLogged()) {
+                return '';
+            }
             // Show any sign-in error first (the callback redirects here on failure),
             // then the button itself (when enabled).
             $out = $this->renderAuthError();
@@ -760,7 +763,7 @@ class apline_simple_google_auth extends Module
     public function hookDisplayCustomerAccountForm($params)
     {
         try {
-            if (!(int) Configuration::get(self::ENABLE_REGISTER)) {
+            if (!(int) Configuration::get(self::ENABLE_REGISTER) || $this->isCustomerLogged()) {
                 return '';
             }
 
@@ -770,6 +773,35 @@ class apline_simple_google_auth extends Module
 
             return '';
         }
+    }
+
+    /**
+     * @return bool true when a customer is already signed in (the button must not be shown then)
+     */
+    private function isCustomerLogged()
+    {
+        return isset($this->context->customer)
+            && $this->context->customer instanceof Customer
+            && $this->context->customer->isLogged();
+    }
+
+    /**
+     * Where the customer should land after signing in: the checkout when the
+     * button was clicked there, otherwise the `back` target of the login page.
+     * The value travels through Google as the `state` of the button and is
+     * validated again in the callback - it is customer-controlled data.
+     *
+     * @return string
+     */
+    private function getReturnTarget()
+    {
+        $self = isset($this->context->controller->php_self) ? (string) $this->context->controller->php_self : '';
+        if ($self === 'order') {
+            return 'order';
+        }
+        $back = (string) Tools::getValue('back');
+
+        return Tools::strlen($back) <= 500 ? $back : '';
     }
 
     /**
@@ -797,6 +829,7 @@ class apline_simple_google_auth extends Module
             'asga_shape' => Configuration::get(self::BUTTON_SHAPE) ?: 'rectangular',
             'asga_auto_prompt' => (int) Configuration::get(self::AUTO_PROMPT),
             'asga_context' => $context,
+            'asga_state' => $this->getReturnTarget(),
             // GIS data-context only accepts signin/signup/use, not our login/register labels.
             'asga_gis_context' => ($context === 'register' ? 'signup' : 'signin'),
             // Button text in the shop language instead of the visitor's browser language.
@@ -972,7 +1005,7 @@ class apline_simple_google_auth extends Module
         );
         if ($idCustomer) {
             $customer = new Customer($idCustomer);
-            if (Validate::isLoadedObject($customer) && $customer->active) {
+            if ($this->canSignIn($customer)) {
                 $this->loginCustomer($customer);
 
                 return ['success' => true, 'error' => null];
@@ -984,6 +1017,9 @@ class apline_simple_google_auth extends Module
         // Step 2 — an existing customer already uses this email?
         $existing = $this->findCustomerByEmail($email);
         if ($existing) {
+            if (!$this->canSignIn($existing)) {
+                return ['success' => false, 'error' => 'account_disabled'];
+            }
             if (!(int) Configuration::get(self::AUTO_LINK_EXISTING)) {
                 return ['success' => false, 'error' => 'email_taken'];
             }
@@ -1014,6 +1050,20 @@ class apline_simple_google_auth extends Module
         $customer->id_shop_group = (int) $this->context->shop->id_shop_group;
 
         if (!Validate::isEmail($customer->email) || !$customer->add()) {
+            // A double click sends two requests: the first one creates the account, the
+            // second one fails on the duplicate e-mail. Sign in to the account that the
+            // first request has just created and linked instead of reporting an error.
+            $created = $this->findCustomerByEmail($email);
+            $linkedId = (int) Db::getInstance()->getValue(
+                'SELECT `id_customer` FROM `' . _DB_PREFIX_ . self::LINK_TABLE . '`
+                 WHERE `google_sub` = \'' . pSQL($googleSub) . '\''
+            );
+            if ($created && $linkedId && (int) $created->id === $linkedId && $this->canSignIn($created)) {
+                $this->loginCustomer($created);
+
+                return ['success' => true, 'error' => null];
+            }
+
             return ['success' => false, 'error' => 'cannot_create'];
         }
 
@@ -1021,10 +1071,20 @@ class apline_simple_google_auth extends Module
             return ['success' => false, 'error' => 'internal_error'];
         }
 
+        // Same order as the native registration (CustomerPersister): sign in, welcome
+        // e-mail, then the hook - modules listening to it expect a logged-in customer.
+        $this->loginCustomer($customer);
+
+        if (Configuration::get('PS_CUSTOMER_CREATION_EMAIL')) {
+            try {
+                $customer->sendWelcomeEmail((int) $customer->id_lang);
+            } catch (\Throwable $e) {
+                PrestaShopLogger::addLog('apline_simple_google_auth: welcome e-mail failed (' . get_class($e) . ')', 2);
+            }
+        }
+
         // Let passive modules (psgdpr, newsletter, ...) react to the new account.
         Hook::exec('actionCustomerAccountAdd', ['newCustomer' => $customer]);
-
-        $this->loginCustomer($customer);
 
         return ['success' => true, 'error' => null];
     }
@@ -1085,13 +1145,13 @@ class apline_simple_google_auth extends Module
     private function sanitizeName($value, $fallback)
     {
         $value = trim((string) $value);
-        if ($value !== '' && Validate::isName($value)) {
+        if ($value !== '' && Validate::isCustomerName($value)) {
             return $value;
         }
 
-        // Strip characters PrestaShop's isName() rejects, then retry.
-        $cleaned = trim((string) preg_replace('/[0-9!<>,;?=+()@#"°{}_$%:]/u', '', $value));
-        if ($cleaned !== '' && Validate::isName($cleaned)) {
+        // Strip characters PrestaShop's isCustomerName() rejects, then retry.
+        $cleaned = trim((string) preg_replace('/[0-9!<>,;?=+()@#"°{}_$%:\/\\\\*^\[\]|]/u', '', $value));
+        if ($cleaned !== '' && Validate::isCustomerName($cleaned)) {
             return $cleaned;
         }
 
@@ -1099,37 +1159,45 @@ class apline_simple_google_auth extends Module
     }
 
     /**
-     * Log a customer in by populating the context cookie, associating the
-     * current cart and firing the native authentication hook. Mirrors what
-     * AuthControllerCore::processSubmitLogin() does.
+     * Log a customer in exactly the way the native login form does
+     * (CustomerLoginFormCore::submit()): Context::updateCustomer() fills the
+     * cookie, attaches the cart and — crucially — registers the customer
+     * session. Since PrestaShop 1.7.8 Customer::isLogged() requires a live
+     * session (Cookie::isSessionAlive()); a cookie filled by hand without it
+     * is treated as "not logged in" and the customer bounces back to the
+     * login page.
      *
      * @param Customer $customer
      */
     private function loginCustomer(Customer $customer)
     {
-        $context = $this->context;
-        $customer->logged = 1;
-        $context->customer = $customer;
+        $this->context->updateCustomer($customer);
 
-        $context->cookie->id_customer = (int) $customer->id;
-        $context->cookie->customer_lastname = $customer->lastname;
-        $context->cookie->customer_firstname = $customer->firstname;
-        $context->cookie->logged = 1;
-        $context->cookie->is_guest = $customer->isGuest();
-        $context->cookie->passwd = $customer->passwd;
-        $context->cookie->email = $customer->email;
+        Hook::exec('actionAuthentication', ['customer' => $this->context->customer]);
 
-        // Carry the current (guest) cart over to the now-logged-in customer.
-        if (isset($context->cart) && Validate::isLoadedObject($context->cart)) {
-            $context->cart->id_customer = (int) $customer->id;
-            $context->cart->secure_key = $customer->secure_key;
-            $context->cart->save();
-            $context->cookie->id_cart = (int) $context->cart->id;
-        }
+        // Login information has changed, so check that the cart rules still apply.
+        CartRule::autoRemoveFromCart($this->context);
+        CartRule::autoAddToCart($this->context);
 
-        $context->cookie->write();
+        // updateCustomer() registers the session after its own write(); persist it explicitly.
+        $this->context->cookie->write();
+    }
 
-        Hook::exec('actionAuthentication', ['customer' => $customer]);
+    /**
+     * Only a regular, active, non-deleted account may sign in with Google.
+     * Customer::getByEmail() and new Customer($id) do not filter on `active`,
+     * so a disabled account has to be rejected here.
+     *
+     * @param Customer $customer
+     *
+     * @return bool
+     */
+    private function canSignIn(Customer $customer)
+    {
+        return Validate::isLoadedObject($customer)
+            && (int) $customer->active === 1
+            && (int) $customer->deleted === 0
+            && !$customer->isGuest();
     }
 
     /**

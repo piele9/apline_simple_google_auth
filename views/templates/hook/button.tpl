@@ -23,6 +23,7 @@
        data-text="{$asga_text|escape:'html':'UTF-8'}"
        data-shape="{$asga_shape|escape:'html':'UTF-8'}"
        {if $asga_locale}data-locale="{$asga_locale|escape:'html':'UTF-8'}"{/if}
+       {if $asga_state}data-state="{$asga_state|escape:'html':'UTF-8'}"{/if}
        data-logo_alignment="left">
   </div>
 </div>
